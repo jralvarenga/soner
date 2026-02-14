@@ -4,13 +4,36 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { user as usersTable } from "./auth-schema";
-import { sql } from "drizzle-orm";
+import {
+	account,
+	accountRelations,
+	session,
+	sessionRelations,
+	userRelations,
+	user as usersTable,
+	verification,
+} from "./auth-schema";
+
+export {
+	usersTable,
+	session,
+	account,
+	verification,
+	userRelations,
+	sessionRelations,
+	accountRelations,
+};
+
+export const TODO_STATUS_ID = "00000000-0000-0000-0000-000000000001";
+export const IN_PROGRESS_STATUS_ID = "00000000-0000-0000-0000-000000000002";
+export const DONE_STATUS_ID = "00000000-0000-0000-0000-000000000003";
 
 export const statusesTable = pgTable("statuses", {
-	id: text("id").primaryKey().generatedAlwaysAs(sql`gen_random_uuid()`),
+	id: uuid("id").primaryKey().defaultRandom(),
+	code: varchar({ length: 64 }).notNull().unique(),
 	name: varchar({ length: 255 }).notNull(),
 	description: text(),
 
@@ -24,30 +47,29 @@ export const tasksTable = pgTable("tasks", {
 	description: text().notNull(),
 
 	completed: boolean().notNull().default(false),
-	status: integer()
+	status: uuid("status")
 		.references(() => statusesTable.id)
 		.notNull()
-		.default(1),
+		.default(TODO_STATUS_ID),
 
-	assignedTo: varchar({ length: 255 }).references(() => usersTable.email),
-	createdBy: varchar({ length: 255 }).references(() => usersTable.email),
+	assignedTo: text("assigned_to"),
+	createdBy: text("created_by"),
 
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 	updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const goalsTable = pgTable("goals", {
-	id: text("id").primaryKey().generatedAlwaysAs(sql`gen_random_uuid()`),
+	id: uuid("id").primaryKey().defaultRandom(),
 	title: varchar({ length: 255 }).notNull(),
 	description: text(),
 
-	status: text()
+	status: uuid()
 		.references(() => statusesTable.id)
-		.notNull()
-		.default("todo"),
+		.notNull(),
 
-	assignedTo: varchar({ length: 255 }).references(() => usersTable.id),
-	createdBy: varchar({ length: 255 }).references(() => usersTable.id),
+	assignedTo: text("assigned_to").references(() => usersTable.id),
+	createdBy: text("created_by").references(() => usersTable.id),
 
 	tasks: integer()
 		.references(() => tasksTable.id)
@@ -58,15 +80,15 @@ export const goalsTable = pgTable("goals", {
 });
 
 export const projectsTable = pgTable("projects", {
-	id: text("id").primaryKey().generatedAlwaysAs(sql`gen_random_uuid()`),
+	id: uuid("id").primaryKey().defaultRandom(),
 	title: varchar({ length: 255 }).notNull(),
 	description: text(),
 
-	createdBy: varchar({ length: 255 }).references(() => usersTable.id),
+	createdBy: text("created_by").references(() => usersTable.id),
 	tasks: integer()
 		.references(() => tasksTable.id)
 		.array(),
-	goals: text()
+	goals: uuid()
 		.references(() => goalsTable.id)
 		.array(),
 
