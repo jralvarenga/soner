@@ -1,3 +1,5 @@
-import { drizzle } from "drizzle-orm/neon-http";
+import { drizzle } from 'drizzle-orm/node-postgres'
 
-export const db = drizzle(process.env.DATABASE_URL!);
+import * as schema from './schema.ts'
+
+export const db = drizzle(process.env.DATABASE_URL!, { schema })
